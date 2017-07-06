@@ -9,8 +9,6 @@ var getTitle = function(node) {
 
 var completedResults = 'Plugin\tInstalls\n';
 
-/* Get the number of pages */
-
 nightmare
   .goto('https://wordpress.org/plugins/search/appointment/page/1')
   .evaluate(function() {
@@ -39,9 +37,7 @@ nightmare
         .then(function(results){ 
           results.forEach(function(item){
             /* Ignore super low installs */
-            console.log(item.count.substring(1,2));
             if (item.count.substring(1,2) != 'F') {
-              console.log(item.count.substring(0,1));
               completedResults += item.title + "\t" + item.count + "\n";
             }
           });
