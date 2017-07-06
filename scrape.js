@@ -31,7 +31,11 @@ function getPluginPages(phrase, numberOfPages) {
   page.onConsoleMessage = function(msg) { console.log(msg) }
 
   page.open('http://wordpress.org/plugins/search' + phrase + '/page/1', function(status) {
-    console.log(page.content); 
+    page.includeJs('https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js', function() {
+      setTimeout(function(){
+        getPlugins();
+      }, 5000);
+    }); 
   });
 
   function getPlugins() {
