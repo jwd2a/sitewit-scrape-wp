@@ -31,21 +31,19 @@ function getPluginPages(phrase, numberOfPages) {
   page.onConsoleMessage = function(msg) { console.log(msg) }
 
   page.open('http://wordpress.org/plugins/search' + phrase + '/page/1', function(status) {
-    console.log(status);
-    page.includeJs('https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js', function() {
-      var plugins = page.evaluate(function() {
-        var titles = [];
-        var pluginTiles = $("h2.entry-title > a");
-        //$("h2.entry-title > a").forEach(function(title) {
-          //titles.push(title.text());
-        //});
-        return pluginTiles;
-      });    
-      plugins.forEach(function(plugin) {
-        console.log(plugin);
-      });
-    }); 
+    console.log(page.content); 
   });
+
+  function getPlugins() {
+    var plugins = page.evaluate(function() {
+      var titles = [];
+      var pluginTiles = $("h2.entry-title > a");
+      //$("h2.entry-title > a").forEach(function(title) {
+      //titles.push(title.text());
+      //});
+      console.log(pluginTiles.length); 
+    });    
+  }
 
   //for (var i = 1; i < +numberOfPages; i++) {
     //var pageAddress = 'http://wordpress.org/plugins/search/' + phrase + '/page/' + i;
