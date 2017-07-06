@@ -1,11 +1,13 @@
 var Nightmare = require('nightmare');
 var nightmare = Nightmare({show: true});
 var async = require('async');
-var vo = require('vo');
+var fs = require('fs');
 
 var getTitle = function(node) {
   return node.querySelector('.entry-title > a').innerHTML;
 }
+
+var completedResults = 'Plugin\tInstalls\n';
 
 /* Get the number of pages */
 
@@ -28,18 +30,27 @@ nightmare
         .wait('.entry-title > a')
         .evaluate(function() {
           return Array.from(document.querySelectorAll('.plugin-card')).map(function(node){
-            var results = [];
-            results.push({
+            return {
               title: node.querySelector('.entry-title > a').innerHTML,
               count: node.querySelector('.active-installs').innerText.split("+")[0]
-            });
-            return results;
+            }
           });
         })
         .then(function(results){ 
-          console.log(results);
+          results.forEach(function(item){
+            /* Ignore super low installs */
+            console.log(item.count.substring(1,2));
+            if (item.count.substring(1,2) != 'F') {
+              console.log(item.count.substring(0,1));
+              completedResults += item.title + "\t" + item.count + "\n";
+            }
+          });
           cb(null, results);
         });
+    }, function(){
+      fs.writeFile('appointment.txt', completedResults, function() {
+        console.log('ALL DONE BUCKO!');
+      });
     });
   });
 
