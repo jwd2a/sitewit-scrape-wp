@@ -3,6 +3,9 @@ var nightmare = Nightmare({show: true});
 var async = require('async');
 var fs = require('fs');
 
+var searchTerm = process.argv[2].replace(' ', '+');
+console.log(searchTerm);
+
 var getTitle = function(node) {
   return node.querySelector('.entry-title > a').innerHTML;
 }
@@ -10,7 +13,7 @@ var getTitle = function(node) {
 var completedResults = 'Plugin\tInstalls\n';
 
 nightmare
-  .goto('https://wordpress.org/plugins/search/appointment/page/1')
+  .goto('https://wordpress.org/plugins/search/' + searchTerm +'/page/1')
   .evaluate(function() {
     return document.querySelector('.page-numbers.dots + a').innerText
   })
@@ -19,7 +22,7 @@ nightmare
     var urls = [];
     var results = [];
     for (var i = 1; i < numPages; i++) {
-      urls.push('https://wordpress.org/plugins/search/appointment/page/' + i);
+      urls.push('https://wordpress.org/plugins/search/'+ searchTerm +'/page/' + i);
     }
     async.eachOfSeries(urls, function(url, i, cb) {
       console.log('Starting to iterate, to url: ', url);
@@ -44,7 +47,7 @@ nightmare
           cb(null, results);
         });
     }, function(){
-      fs.writeFile('appointment.txt', completedResults, function() {
+      fs.writeFile(searchTerm.replace("+", "-") + '.txt', completedResults, function() {
         console.log('ALL DONE BUCKO!');
       });
     });
