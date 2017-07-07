@@ -85,6 +85,8 @@ function getWorksheet(callback){
 }
 
 function buildWorksheet() {
+  var stdDev = stats.stdev(counts);
+  var mean = stats.mean(counts);
   getWorksheet(function(workbook) {
     var worksheet = workbook.addWorksheet(searchTerm);
     worksheet.columns = [
@@ -97,7 +99,18 @@ function buildWorksheet() {
       var items = file.split('\n');
       items.forEach(function(item) {
         var i = item.split('\t');
-        worksheet.addRow([i[0], i[1], i[2], i[3]]);
+        if (i[3]) {
+          i[3] = parseInt(i[3].replace(',',''));
+        }
+        var row = worksheet.addRow([i[0], i[1], i[2], i[3]]);
+        try {
+          if (i[3] > (stdDev + mean)) {
+            console.log("FILL THE ROW");
+            row.fill = {
+              bgColor:{argb:'000000FF'}
+            }
+          }
+        } catch(e) {}
       });
       workbook.xlsx.writeFile('./plugins.xlsx')
         .then(function() {
