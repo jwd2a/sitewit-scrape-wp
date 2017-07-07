@@ -1,7 +1,8 @@
 var Nightmare = require('nightmare');
-var nightmare = Nightmare({show: true});
+var nightmare = Nightmare({show: false});
 var async = require('async');
 var fs = require('fs');
+var striptags = require('striptags');
 
 var searchTerm = process.argv[2].replace(' ', '+');
 console.log(searchTerm);
@@ -10,7 +11,7 @@ var getTitle = function(node) {
   return node.querySelector('.entry-title > a').innerHTML;
 }
 
-var completedResults = 'Plugin\tInstalls\n';
+var completedResults = 'Plugin\tDescription\tLink\tInstalls\n';
 
 nightmare
   .goto('https://wordpress.org/plugins/search/' + searchTerm +'/page/1')
@@ -31,17 +32,23 @@ nightmare
         .wait('.entry-title > a')
         .evaluate(function() {
           return Array.from(document.querySelectorAll('.plugin-card')).map(function(node){
-            return {
-              title: node.querySelector('.entry-title > a').innerHTML,
-              count: node.querySelector('.active-installs').innerText.split("+")[0]
+            try {
+              return {
+                title: node.querySelector('.entry-title > a').innerHTML,
+                description: node.querySelector('.entry-excerpt > p').innerHTML,
+                link: node.querySelector('.entry-title > a').href,
+                count: node.querySelector('.active-installs').innerText.split("+")[0]
+              }
+            } catch(e) {
+              return {}
             }
           });
         })
         .then(function(results){ 
           results.forEach(function(item){
             /* Ignore super low installs */
-            if (item.count.substring(1,2) != 'F') {
-              completedResults += item.title + "\t" + item.count + "\n";
+            if (item.count && item.count.substring(1,2) != 'F') {
+              completedResults += item.title + "\t" + cleanText(item.description) + "\t" + item.link + "\t" + item.count + "\n";
             }
           });
           cb(null, results);
@@ -53,4 +60,8 @@ nightmare
     });
   });
 
-
+function cleanText(text) {
+  text = striptags(text);
+  text = text.replace(/[^a-zA-Z0-9_ ]/g, "");
+  return text;
+}
