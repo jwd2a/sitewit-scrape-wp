@@ -13,10 +13,13 @@ var getTitle = function(node) {
   return node.querySelector('.entry-title > a').innerHTML;
 }
 
-var completedResults = 'Plugin\tDescription\tLink\tInstalls\n';
+var completedResults = '';
 var counts = [];
 
 nightmare
+  .on('console', (log, msg) => {
+    console.log(msg);
+  })
   .goto('https://wordpress.org/plugins/search/' + searchTerm +'/page/1')
   .evaluate(function() {
     return document.querySelector('.page-numbers.dots + a').innerText
@@ -36,11 +39,18 @@ nightmare
         .evaluate(function() {
           return Array.from(document.querySelectorAll('.plugin-card')).map(function(node){
             try {
+              var installs = node.querySelector('.active-installs').innerText;
+              if (installs.search('million') != -1) {
+                count = parseInt(installs.split('+')[0]) * 1000000;
+              } else {
+                count = parseInt(installs.split('+')[0].replace(',',''));
+              }
+
               return {
                 title: node.querySelector('.entry-title > a').innerHTML,
                 description: node.querySelector('.entry-excerpt > p').innerHTML,
                 link: node.querySelector('.entry-title > a').href,
-                count: node.querySelector('.active-installs').innerText.split("+")[0]
+                count: count
               }
             } catch(e) {
               return {}
@@ -50,9 +60,9 @@ nightmare
         .then(function(results){ 
           results.forEach(function(item){
             /* Ignore super low installs */
-            if (item.count && item.count.substring(1,2) != 'F') {
+            if (item.count != 'NaN') {
               completedResults += item.title + "\t" + cleanText(item.description) + "\t" + item.link + "\t" + item.count + "\n";
-              counts.push(item.count.replace(',', ''));
+              counts.push(item.count);
             }
           });
           cb(null, results);
@@ -90,12 +100,12 @@ function buildWorksheet() {
   getWorksheet(function(workbook) {
     var worksheet = workbook.addWorksheet(searchTerm);
     worksheet.columns = [
-      { header: 'Plugin' },
-      { header: 'Description' },
-      { header: 'Link' },
-      { header: 'Installs' }
+      { header: 'Plugin', width: 70},
+      { header: 'Description', width: 130},
+      { header: 'Link', width: 50},
+      { header: 'Installs', width: 10}
     ];
-    fs.readFile(searchTerm + '.txt', 'utf8', function(err, file) {
+    fs.readFile(searchTerm.replace('+', '-') + '.txt', 'utf8', function(err, file) {
       var items = file.split('\n');
       items.forEach(function(item) {
         var i = item.split('\t');
@@ -105,13 +115,25 @@ function buildWorksheet() {
         var row = worksheet.addRow([i[0], i[1], i[2], i[3]]);
         try {
           if (i[3] > (stdDev + mean)) {
-            console.log("FILL THE ROW");
             row.fill = {
-              bgColor:{argb:'000000FF'}
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor:{argb:'5900FF00'}
             }
           }
         } catch(e) {}
       });
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFC2C2C2' }
+      }
+      worksheet.getRow(1).font = {
+        bold: true
+      }
+      worksheet.getColumn('A').font = {
+        bold: true
+      }
       workbook.xlsx.writeFile('./plugins.xlsx')
         .then(function() {
           console.log("Done!");
