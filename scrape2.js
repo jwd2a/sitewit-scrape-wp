@@ -6,7 +6,7 @@ var striptags = require('striptags');
 var stats = require('stats-lite');
 var excel = require('exceljs');
 
-var searchTerm = process.argv[2].replace(' ', '+');
+var searchTerm = process.argv[process.argv.indexOf('-q') + 1].replace(/ /g, '+');
 console.log(searchTerm);
 
 var getTitle = function(node) {
